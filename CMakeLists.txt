@@ -50,6 +50,7 @@ endif()
 # -- Exported names for each backend ------------------------------------------
 
 set(EGGS_STACKTRACE_BACKEND_EXPORT_null Null)
+set(EGGS_STACKTRACE_BACKEND_EXPORT_execinfo Execinfo)
 
 # -- Common OBJECT library ----
 
@@ -135,10 +136,20 @@ endmacro()
 
 eggs_stacktrace_add_backend(null)
 
+include(CheckIncludeFileCXX)
+check_include_file_cxx(execinfo.h EGGS_STACKTRACE_HAVE_EXECINFO_H)
+if(EGGS_STACKTRACE_HAVE_EXECINFO_H)
+    eggs_stacktrace_add_backend(execinfo ${CMAKE_DL_LIBS})
+endif()
+
 # -- Main alias ----------------------------------------------------------------
 # Note: ALIAS cannot alias another ALIAS, so we alias the internal target name.
 
-set(EGGS_STACKTRACE_DEFAULT_BACKEND null)
+if(TARGET _eggs_stacktrace_execinfo)
+    set(EGGS_STACKTRACE_DEFAULT_BACKEND execinfo)
+else()
+    set(EGGS_STACKTRACE_DEFAULT_BACKEND null)
+endif()
 
 add_library(
     Eggs::Stacktrace
@@ -193,6 +204,7 @@ if(ENABLE_INSTALL)
     endmacro()
 
     eggs_stacktrace_install_backend(null)
+    eggs_stacktrace_install_backend(execinfo)
 
     install(
         EXPORT EggsStacktraceTargets
