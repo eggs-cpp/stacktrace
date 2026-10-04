@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Design - Eggs.Stacktrace</title>
+    <link rel="stylesheet" type="text/css" href="css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="css/highlight.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="shortcut icon" href="css/img/favicon.png"
+          type="image/png">
+</head>
+<body>
+    <div id="container">
+        <header id="head">
+            <div class="top">
+                <img src="logo.png" class="logo" alt="">
+                <a href="index.html">Eggs.Stacktrace</a>
+            </div>
+        </header>
+        <div id="head_post">
+            <a class="name" href="intro.html">Introduction</a> &middot;
+            <a class="name title" href="design.html">Design</a> &middot;
+            <a class="name" href="usage.html">Usage</a> &middot;
+            <a class="name" href="cmake.html">CMake</a> &middot;
+            <a class="name" href="reference.html">Reference</a>
+        </div>
+        <div class="design">
+            <section>
+<h1 id="design"><a href="#design">Design</a></h1>
+<h2 id="mirrors-stdstacktrace"><a href="#mirrors-stdstacktrace">Mirrors <code>std::stacktrace</code></a></h2>
+<p>The public interface follows the C++23 <code>&lt;stacktrace&gt;</code> header section by
+section: <code>stacktrace_entry</code> ([stacktrace.entry]), <code>stacktrace</code>
+([stacktrace.basic]), the non-member functions, hashing and formatting.
+Code written against <code>eggs::stacktrace</code> should port to <code>std::stacktrace</code>
+by changing the namespace. The deviations are deliberate and small:</p>
+<ul>
+<li><strong>No allocator parameter.</strong> <code>eggs::stacktrace</code> is a plain class, not
+  an alias of a <code>basic_stacktrace&lt;Allocator&gt;</code> template, and there is no
+  <code>pmr</code> alias.</li>
+<li><strong><code>reference</code> is <code>const_reference</code>.</strong> No mutable element access is
+  provided, so iterators are <code>stacktrace_entry const*</code>.</li>
+<li><strong><code>native_handle_type</code> is <code>void*</code>.</strong> It is the instruction address.</li>
+<li><strong><code>std::ostream</code> only.</strong> Stream insertion is not templated on the
+  character type.</li>
+<li><strong><code>current()</code> is <code>[[nodiscard]]</code></strong> (where the compiler supports it).</li>
+<li><strong>C++20 comparison is not <code>constexpr</code>.</strong> <code>operator&lt;=&gt;</code> on entries
+  orders by address, which needs <code>reinterpret_cast</code>.</li>
+</ul>
+<h2 id="backends"><a href="#backends">Backends</a></h2>
+<p>Capture and symbolization are the only platform-specific parts. They
+sit behind a small contract (<code>capture</code>, plus one function each for
+description, source file and source line) that every backend
+implements. Everything else -- containers, comparison, hashing,
+formatting -- lives in a common object library shared by all backends.</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Capture</th>
+<th>Symbolization</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Null</code></td>
+<td>none (always empty)</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>Execinfo</code></td>
+<td><code>backtrace()</code></td>
+<td><code>dladdr()</code> + <code>__cxa_demangle()</code>; no source file or line</td>
+</tr>
+<tr>
+<td><code>Libbacktrace</code></td>
+<td>libbacktrace</td>
+<td>function, file and line from debug info</td>
+</tr>
+<tr>
+<td><code>Win32</code></td>
+<td><code>CaptureStackBackTrace</code></td>
+<td>DbgHelp; function, file and line from the PDB</td>
+</tr>
+</tbody>
+</table>
+<p>Each backend is a separate static library, so several can be built in
+the same project (for example to compare them in tests). The
+<code>Eggs::Stacktrace</code> target aliases one of them: by default the first
+available of Libbacktrace, Execinfo and Win32, falling back to Null.</p>
+<p>The <code>Null</code> backend exists so that code using the library always
+builds and links. It never fails and never captures anything, which
+makes it a safe choice where no real backend is available.</p>
+<h2 id="failure-is-not-an-error"><a href="#failure-is-not-an-error">Failure is not an error</a></h2>
+<p><code>stacktrace::current</code> is <code>noexcept</code>. If a trace cannot be obtained the
+result is an empty <code>stacktrace</code>. Likewise, <code>description()</code>,
+<code>source_file()</code> and <code>source_line()</code> return an empty string or <code>0</code> when
+the backend has no information; only memory allocation failures throw.
+Stacktraces are diagnostic aids and must not turn a diagnostic path into
+a new failure path.</p>
+<h2 id="skipping-frames"><a href="#skipping-frames">Skipping frames</a></h2>
+<p><code>current(skip)</code> and <code>current(skip, max_depth)</code> count from the caller of
+<code>current</code>. The library's own frames are accounted for internally, so
+<code>current(0)</code> starts at the function that called <code>current</code>, and
+<code>current(1)</code> starts at its caller. This is what makes the idiom of
+capturing in a constructor and skipping the constructor itself work.</p>
+<h2 id="thread-safety"><a href="#thread-safety">Thread safety</a></h2>
+<p>Capture is thread-safe. DbgHelp, used by the <code>Win32</code> backend, is not:
+the backend serializes its own <code>Sym*</code> calls with a mutex, but cannot
+protect against other code in the process that calls DbgHelp directly.</p>
+            </section>
+        </div>
+        <hr>
+        <p>
+            Copyright &copy; 2026 Agustin Berge
+        </p>
+        <p>
+            Distributed under the Boost Software License, Version 1.0.<br>
+            See accompanying file LICENSE.txt or copy at
+            <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>
+        </p>
+    </div>
+</body>
+</html>

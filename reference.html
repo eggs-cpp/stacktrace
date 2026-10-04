@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Reference - Eggs.Stacktrace</title>
+    <link rel="stylesheet" type="text/css" href="css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="css/highlight.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="shortcut icon" href="css/img/favicon.png"
+          type="image/png">
+</head>
+<body>
+    <div id="container">
+        <header id="head">
+            <div class="top">
+                <img src="logo.png" class="logo" alt="">
+                <a href="index.html">Eggs.Stacktrace</a>
+            </div>
+        </header>
+        <div id="head_post">
+            <a class="name" href="intro.html">Introduction</a> &middot;
+            <a class="name" href="design.html">Design</a> &middot;
+            <a class="name" href="usage.html">Usage</a> &middot;
+            <a class="name" href="cmake.html">CMake</a> &middot;
+            <a class="name title" href="reference.html">Reference</a>
+        </div>
+        <div class="reference">
+            <section>
+<h1 id="reference"><a href="#reference">Reference</a></h1>
+<h2 id="headers"><a href="#headers">Headers</a></h2>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Provides</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;eggs/stacktrace.hpp&gt;</code></td>
+<td><code>eggs::stacktrace</code>, <code>eggs::stacktrace_entry</code>, <code>to_string</code>, <code>operator&lt;&lt;</code>, <code>std::hash</code>, <code>std::formatter</code></td>
+</tr>
+</tbody>
+</table>
+<p>Headers under <code>eggs/stacktrace/detail/</code> are implementation details.</p>
+<hr />
+<h2 id="eggsstacktrace_entry"><a href="#eggsstacktrace_entry"><code>eggs::stacktrace_entry</code></a></h2>
+<p>A single stack frame, identified by its instruction address.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">stacktrace_entry</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">native_handle_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">constexpr</span><span class="w"> </span><span class="n">stacktrace_entry</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">constexpr</span><span class="w"> </span><span class="n">native_handle_type</span><span class="w"> </span><span class="nf">native_handle</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="k">constexpr</span><span class="w"> </span><span class="k">explicit</span><span class="w"> </span><span class="k">operator</span><span class="w"> </span><span class="kt">bool</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">description</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">source_file</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="kt">uint_least32_t</span><span class="w"> </span><span class="nf">source_line</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>native_handle()</code></td>
+<td>The instruction address. <code>nullptr</code> for an empty entry.</td>
+</tr>
+<tr>
+<td><code>operator bool</code></td>
+<td><code>false</code> only if the entry is empty.</td>
+</tr>
+<tr>
+<td><code>description()</code></td>
+<td>Demangled function name, or empty if unavailable.</td>
+</tr>
+<tr>
+<td><code>source_file()</code></td>
+<td>Source file path, or empty if unavailable.</td>
+</tr>
+<tr>
+<td><code>source_line()</code></td>
+<td>Source line, or <code>0</code> if unavailable.</td>
+</tr>
+</tbody>
+</table>
+<p>The query functions treat all errors other than memory allocation
+failure as "no information available".</p>
+<p><strong>Comparison:</strong> <code>==</code> and <code>!=</code> are <code>constexpr</code> and compare addresses. Two
+empty entries are equal. Ordering (<code>&lt;=&gt;</code> in C++20, otherwise <code>&lt;</code>, <code>&gt;</code>,
+<code>&lt;=</code>, <code>&gt;=</code>) is by address.</p>
+<hr />
+<h2 id="eggsstacktrace"><a href="#eggsstacktrace"><code>eggs::stacktrace</code></a></h2>
+<p>An immutable sequence of <code>stacktrace_entry</code>, innermost frame first.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">stacktrace</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="k">public</span><span class="o">:</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">value_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stacktrace_entry</span><span class="p">;</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">const_reference</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stacktrace_entry</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">reference</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">const_reference</span><span class="p">;</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">const_iterator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stacktrace_entry</span><span class="w"> </span><span class="k">const</span><span class="o">*</span><span class="p">;</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">iterator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">const_iterator</span><span class="p">;</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">reverse_iterator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">reverse_iterator</span><span class="o">&lt;</span><span class="n">iterator</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">const_reverse_iterator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">reverse_iterator</span><span class="o">&lt;</span><span class="n">const_iterator</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">difference_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">ptrdiff_t</span><span class="p">;</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="n">size_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="kt">size_t</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">stacktrace</span><span class="w"> </span><span class="nf">current</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">stacktrace</span><span class="w"> </span><span class="nf">current</span><span class="p">(</span><span class="n">size_type</span><span class="w"> </span><span class="n">skip</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">stacktrace</span><span class="w"> </span><span class="nf">current</span><span class="p">(</span><span class="n">size_type</span><span class="w"> </span><span class="n">skip</span><span class="p">,</span><span class="w"> </span><span class="n">size_type</span><span class="w"> </span><span class="n">max_depth</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">stacktrace</span><span class="p">()</span><span class="w"> </span><span class="k">noexcept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// copy and move construction and assignment</span>
+
+<span class="w">    </span><span class="c1">// begin, end, cbegin, cend, rbegin, rend, crbegin, crend</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="nf">empty</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="n">size_type</span><span class="w"> </span><span class="nf">size</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="n">size_type</span><span class="w"> </span><span class="nf">max_size</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">const_reference</span><span class="w"> </span><span class="k">operator</span><span class="p">[](</span><span class="n">size_type</span><span class="w"> </span><span class="n">idx</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="w">    </span><span class="n">const_reference</span><span class="w"> </span><span class="nf">at</span><span class="p">(</span><span class="n">size_type</span><span class="w"> </span><span class="n">idx</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="nf">swap</span><span class="p">(</span><span class="n">stacktrace</span><span class="o">&amp;</span><span class="w"> </span><span class="n">other</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="capture"><a href="#capture">Capture</a></h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>current()</code></td>
+<td>Stacktrace of the calling thread, starting at the caller of <code>current</code>. Empty if it cannot be obtained.</td>
+</tr>
+<tr>
+<td><code>current(skip)</code></td>
+<td>As above, omitting the first <code>skip</code> frames.</td>
+</tr>
+<tr>
+<td><code>current(skip, max_depth)</code></td>
+<td>As above, keeping at most <code>max_depth</code> frames.</td>
+</tr>
+</tbody>
+</table>
+<p>All overloads are <code>noexcept</code>. A <code>skip</code> larger than the stack depth
+yields an empty stacktrace.</p>
+<h3 id="element-access"><a href="#element-access">Element access</a></h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>operator[](idx)</code></td>
+<td>Entry at <code>idx</code>. Precondition: <code>idx &lt; size()</code>.</td>
+</tr>
+<tr>
+<td><code>at(idx)</code></td>
+<td>Entry at <code>idx</code>. Throws <code>std::out_of_range</code> if <code>idx &gt;= size()</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="comparison"><a href="#comparison">Comparison</a></h3>
+<p><code>==</code> and <code>!=</code> compare element-wise. Ordering compares <code>size()</code> first,
+then lexicographically (<code>&lt;=&gt;</code> in C++20, otherwise <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>).</p>
+<hr />
+<h2 id="non-member-functions"><a href="#non-member-functions">Non-member functions</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">swap</span><span class="p">(</span><span class="n">stacktrace</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">stacktrace</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="k">noexcept</span><span class="p">;</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="n">stacktrace_entry</span><span class="w"> </span><span class="n">entry</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="n">stacktrace</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">st</span><span class="p">);</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">ostream</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="o">&lt;&lt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">ostream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">os</span><span class="p">,</span><span class="w"> </span><span class="n">stacktrace_entry</span><span class="w"> </span><span class="n">entry</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">ostream</span><span class="o">&amp;</span><span class="w"> </span><span class="k">operator</span><span class="o">&lt;&lt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">ostream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">os</span><span class="p">,</span><span class="w"> </span><span class="n">stacktrace</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">st</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="output-format"><a href="#output-format">Output format</a></h3>
+<p><code>to_string(entry)</code> is empty for an empty entry. Otherwise:</p>
+<div class="codehilite"><pre><span></span><code>&lt;address&gt;[ in &lt;description&gt;][ at &lt;source_file&gt;[:&lt;source_line&gt;]]
+</code></pre></div>
+
+<p>The <code>in</code> part is present when <code>description()</code> is non-empty, the
+<code>at</code> part when <code>source_file()</code> is non-empty, and <code>:&lt;source_line&gt;</code>
+when additionally <code>source_line()</code> is not <code>0</code>.</p>
+<p><code>to_string(st)</code> is the concatenation of <code>to_string(entry) + "\n"</code> for
+every entry.</p>
+<hr />
+<h2 id="hashing"><a href="#hashing">Hashing</a></h2>
+<p><code>std::hash&lt;eggs::stacktrace_entry&gt;</code> and <code>std::hash&lt;eggs::stacktrace&gt;</code>
+are specialized. The stacktrace hash combines the size and all entries.</p>
+<hr />
+<h2 id="formatting"><a href="#formatting">Formatting</a></h2>
+<p>Available when <code>__cpp_lib_format</code> is defined.</p>
+<table>
+<thead>
+<tr>
+<th>Specialization</th>
+<th>Format specification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>std::formatter&lt;eggs::stacktrace_entry&gt;</code></td>
+<td>Fill, align and width, as for <code>std::string</code></td>
+</tr>
+<tr>
+<td><code>std::formatter&lt;eggs::stacktrace&gt;</code></td>
+<td>None; produces <code>to_string(st)</code></td>
+</tr>
+</tbody>
+</table>
+            </section>
+        </div>
+        <hr>
+        <p>
+            Copyright &copy; 2026 Agustin Berge
+        </p>
+        <p>
+            Distributed under the Boost Software License, Version 1.0.<br>
+            See accompanying file LICENSE.txt or copy at
+            <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>
+        </p>
+    </div>
+</body>
+</html>

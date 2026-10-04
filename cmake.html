@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CMake - Eggs.Stacktrace</title>
+    <link rel="stylesheet" type="text/css" href="css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="css/highlight.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="shortcut icon" href="css/img/favicon.png"
+          type="image/png">
+</head>
+<body>
+    <div id="container">
+        <header id="head">
+            <div class="top">
+                <img src="logo.png" class="logo" alt="">
+                <a href="index.html">Eggs.Stacktrace</a>
+            </div>
+        </header>
+        <div id="head_post">
+            <a class="name" href="intro.html">Introduction</a> &middot;
+            <a class="name" href="design.html">Design</a> &middot;
+            <a class="name" href="usage.html">Usage</a> &middot;
+            <a class="name title" href="cmake.html">CMake</a> &middot;
+            <a class="name" href="reference.html">Reference</a>
+        </div>
+        <div class="cmake">
+            <section>
+<h1 id="cmake-integration"><a href="#cmake-integration">CMake Integration</a></h1>
+<h2 id="building"><a href="#building">Building</a></h2>
+<div class="codehilite"><pre><span></span><code>cmake<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-B<span class="w"> </span>build
+cmake<span class="w"> </span>--build<span class="w"> </span>build
+cmake<span class="w"> </span>--install<span class="w"> </span>build<span class="w"> </span>--prefix<span class="w"> </span>/usr/local
+</code></pre></div>
+
+<p>The project ships <code>CMakePresets.json</code> with configurations for GCC,
+Clang, Clang with libc++, MSVC, clang-cl, and AddressSanitizer builds.
+List available presets with:</p>
+<div class="codehilite"><pre><span></span><code>cmake<span class="w"> </span>--list-presets
+cmake<span class="w"> </span>--preset<span class="w"> </span>dev-gcc<span class="w"> </span>-B<span class="w"> </span>build/dev-gcc
+cmake<span class="w"> </span>--build<span class="w"> </span>build/dev-gcc<span class="w"> </span>--config<span class="w"> </span>Debug
+ctest<span class="w"> </span>--test-dir<span class="w"> </span>build/dev-gcc<span class="w"> </span>--build-config<span class="w"> </span>Debug
+</code></pre></div>
+
+<h3 id="options"><a href="#options">Options</a></h3>
+<p>Pass options at configure time with <code>-D&lt;option&gt;=&lt;value&gt;</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Subdirectory variant</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>BUILD_DOCS</code></strong> (default: <code>ON</code>)</td>
+<td><strong><code>EGGS_STACKTRACE_BUILD_DOCS</code></strong> (default: <code>OFF</code>)</td>
+<td>Build the documentation</td>
+</tr>
+<tr>
+<td><strong><code>BUILD_EXAMPLES</code></strong> (default: <code>ON</code>)</td>
+<td><strong><code>EGGS_STACKTRACE_BUILD_EXAMPLES</code></strong> (default: <code>OFF</code>)</td>
+<td>Build example programs</td>
+</tr>
+<tr>
+<td><strong><code>BUILD_TESTING</code></strong> (default: <code>ON</code>, via CTest)</td>
+<td><strong><code>EGGS_STACKTRACE_BUILD_TESTING</code></strong> (default: <code>OFF</code>)</td>
+<td>Build the test suite</td>
+</tr>
+<tr>
+<td><strong><code>ENABLE_INSTALL</code></strong> (default: <code>ON</code>)</td>
+<td><strong><code>EGGS_STACKTRACE_ENABLE_INSTALL</code></strong> (default: <code>OFF</code>)</td>
+<td>Generate install rules</td>
+</tr>
+</tbody>
+</table>
+<p>Building the documentation requires a Python 3 interpreter and network
+access to install the pinned <code>markdown</code> and <code>pygments</code> packages into the
+build tree. Configure with <code>-DBUILD_DOCS=OFF</code> to skip it.</p>
+<p>The prefixed variants take precedence over the short names when the
+project is included via <code>add_subdirectory</code>, avoiding collisions with
+the parent project's own settings.</p>
+<p>Backend selection uses two cache variables, with no short spelling:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>EGGS_STACKTRACE_BACKENDS</code></strong></td>
+<td>Semicolon-separated list of backends to build, from <code>null</code>, <code>execinfo</code>, <code>libbacktrace</code>, <code>win32</code>. Empty (default) auto-detects. Requesting a backend that is not available is an error.</td>
+</tr>
+<tr>
+<td><strong><code>EGGS_STACKTRACE_DEFAULT_BACKEND</code></strong></td>
+<td>Backend that <code>Eggs::Stacktrace</code> aliases. Empty (default) selects the first available of <code>libbacktrace</code>, <code>execinfo</code>, <code>win32</code>, falling back to <code>null</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code>cmake<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-B<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DEGGS_STACKTRACE_BACKENDS<span class="o">=</span><span class="s2">&quot;null;execinfo&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DEGGS_STACKTRACE_DEFAULT_BACKEND<span class="o">=</span>execinfo
+</code></pre></div>
+
+<h2 id="consuming-the-library"><a href="#consuming-the-library">Consuming the library</a></h2>
+<h3 id="fetchcontent"><a href="#fetchcontent">FetchContent</a></h3>
+<div class="codehilite"><pre><span></span><code><span class="nb">include</span><span class="p">(</span><span class="s">FetchContent</span><span class="p">)</span>
+<span class="nb">FetchContent_Declare</span><span class="p">(</span>
+<span class="w">    </span><span class="s">eggs.stacktrace</span>
+<span class="w">    </span><span class="s">GIT_REPOSITORY</span><span class="w"> </span><span class="s">https://github.com/eggs-cpp/stacktrace.git</span>
+<span class="w">    </span><span class="s">GIT_TAG</span><span class="w">        </span><span class="s">v1.0.0</span>
+<span class="p">)</span>
+<span class="nb">FetchContent_MakeAvailable</span><span class="p">(</span><span class="s">eggs.stacktrace</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">my_target</span><span class="w"> </span><span class="s">PRIVATE</span><span class="w"> </span><span class="s">Eggs::Stacktrace</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="find_package-after-installation"><a href="#find_package-after-installation">find_package (after installation)</a></h3>
+<div class="codehilite"><pre><span></span><code><span class="nb">find_package</span><span class="p">(</span><span class="s">Eggs.Stacktrace</span><span class="w"> </span><span class="s">1.0.0</span><span class="w"> </span><span class="s">REQUIRED</span><span class="p">)</span>
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">my_target</span><span class="w"> </span><span class="s">PRIVATE</span><span class="w"> </span><span class="s">Eggs::Stacktrace</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The installed package re-checks each backend's dependencies on the
+consuming machine and provides only those that resolve. If the
+configured default is not available, <code>Eggs::Stacktrace</code> falls back to
+the <code>Null</code> backend with a warning.</p>
+<hr />
+<h2 id="targets"><a href="#targets">Targets</a></h2>
+<h3 id="eggsstacktrace"><a href="#eggsstacktrace"><code>Eggs::Stacktrace</code></a></h3>
+<p>Alias of the default backend (see <code>EGGS_STACKTRACE_DEFAULT_BACKEND</code>).
+Provides <code>&lt;eggs/stacktrace.hpp&gt;</code> and requires C++11.</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">my_target</span><span class="w"> </span><span class="s">PRIVATE</span><span class="w"> </span><span class="s">Eggs::Stacktrace</span><span class="p">)</span>
+</code></pre></div>
+
+<h3 id="eggsstacktracenull"><a href="#eggsstacktracenull"><code>Eggs::Stacktrace::Null</code></a></h3>
+<p>Always available. Captures nothing; every trace is empty.</p>
+<h3 id="eggsstacktraceexecinfo"><a href="#eggsstacktraceexecinfo"><code>Eggs::Stacktrace::Execinfo</code></a></h3>
+<p>POSIX systems with <code>backtrace()</code>, <code>dladdr()</code> and <code>__cxa_demangle()</code>.
+Links <code>${CMAKE_DL_LIBS}</code>. Provides function names, not source
+locations.</p>
+<h3 id="eggsstacktracelibbacktrace"><a href="#eggsstacktracelibbacktrace"><code>Eggs::Stacktrace::Libbacktrace</code></a></h3>
+<p>Requires libbacktrace (found by the bundled <code>FindLibbacktrace.cmake</code>).
+Provides function names and source locations.</p>
+<h3 id="eggsstacktracewin32"><a href="#eggsstacktracewin32"><code>Eggs::Stacktrace::Win32</code></a></h3>
+<p>Windows, using <code>CaptureStackBackTrace</code> and DbgHelp. Provides function
+names and source locations when PDBs are available.</p>
+<p>All backends are static libraries and share the same public headers.
+Link exactly one backend into a program; linking several defines the
+same symbols more than once.</p>
+            </section>
+        </div>
+        <hr>
+        <p>
+            Copyright &copy; 2026 Agustin Berge
+        </p>
+        <p>
+            Distributed under the Boost Software License, Version 1.0.<br>
+            See accompanying file LICENSE.txt or copy at
+            <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Introduction - Eggs.Stacktrace</title>
+    <link rel="stylesheet" type="text/css" href="css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="css/highlight.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="shortcut icon" href="css/img/favicon.png"
+          type="image/png">
+</head>
+<body>
+    <div id="container">
+        <header id="head">
+            <div class="top">
+                <img src="logo.png" class="logo" alt="">
+                <a href="index.html">Eggs.Stacktrace</a>
+            </div>
+        </header>
+        <div id="head_post">
+            <a class="name title" href="intro.html">Introduction</a> &middot;
+            <a class="name" href="design.html">Design</a> &middot;
+            <a class="name" href="usage.html">Usage</a> &middot;
+            <a class="name" href="cmake.html">CMake</a> &middot;
+            <a class="name" href="reference.html">Reference</a>
+        </div>
+        <div class="intro">
+            <section>
+<h1 id="introduction"><a href="#introduction">Introduction</a></h1>
+<p><strong>Eggs.Stacktrace</strong> is a stacktrace library for C++11 and later. It
+provides <code>eggs::stacktrace</code> and <code>eggs::stacktrace_entry</code>, modeled on
+the C++23 <code>std::stacktrace</code> and <code>std::stacktrace_entry</code>, on compilers
+and standard libraries that do not ship one -- or where the standard
+one is not available at the language level you build with.</p>
+<h2 id="why"><a href="#why">Why</a></h2>
+<p>A stacktrace answers <em>how did we get here</em>. The standard library
+solution requires C++23 and a library implementation that supports it.
+Eggs.Stacktrace offers the same interface from C++11, with the
+platform-specific capture and symbolization isolated in pluggable
+backends.</p>
+<h2 id="what-it-provides"><a href="#what-it-provides">What it provides</a></h2>
+<ul>
+<li><strong><code>&lt;eggs/stacktrace.hpp&gt;</code></strong> -- <code>eggs::stacktrace</code>,
+  <code>eggs::stacktrace_entry</code>, <code>to_string</code>, stream insertion, <code>std::hash</code>
+  and (when available) <code>std::formatter</code> support.</li>
+<li><strong>Backends</strong> -- <code>Eggs::Stacktrace::Null</code>, <code>Execinfo</code>, <code>Libbacktrace</code>
+  and <code>Win32</code>, selected at build time. <code>Eggs::Stacktrace</code> aliases the
+  best one available.</li>
+</ul>
+<h2 id="what-a-stacktrace-looks-like"><a href="#what-a-stacktrace-looks-like">What a stacktrace looks like</a></h2>
+<div class="codehilite"><pre><span></span><code>0x00007ff6a1b21234 in example::innermost at example/basic.cpp:35
+0x00007ff6a1b21290 in example::middle at example/basic.cpp:50
+0x00007ff6a1b212f0 in example::outer&lt;42&gt; at example/basic.cpp:66
+0x00007ff6a1b2136c in main at example/basic.cpp:75
+</code></pre></div>
+
+<p>Each line is one entry: the address, then the description and source
+location when the backend can resolve them. The exact content depends
+on the backend and on whether debug information is available.</p>
+<h2 id="requirements"><a href="#requirements">Requirements</a></h2>
+<ul>
+<li>A C++11 compiler (GCC 11+, Clang 17+, MSVC 2022+)</li>
+<li>CMake 4.0+ to build from source; CMake 3.21+ to consume an installed
+  package via <code>find_package</code></li>
+</ul>
+            </section>
+        </div>
+        <hr>
+        <p>
+            Copyright &copy; 2026 Agustin Berge
+        </p>
+        <p>
+            Distributed under the Boost Software License, Version 1.0.<br>
+            See accompanying file LICENSE.txt or copy at
+            <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Usage - Eggs.Stacktrace</title>
+    <link rel="stylesheet" type="text/css" href="css/normalize.css">
+    <link rel="stylesheet" type="text/css" href="css/highlight.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="shortcut icon" href="css/img/favicon.png"
+          type="image/png">
+</head>
+<body>
+    <div id="container">
+        <header id="head">
+            <div class="top">
+                <img src="logo.png" class="logo" alt="">
+                <a href="index.html">Eggs.Stacktrace</a>
+            </div>
+        </header>
+        <div id="head_post">
+            <a class="name" href="intro.html">Introduction</a> &middot;
+            <a class="name" href="design.html">Design</a> &middot;
+            <a class="name title" href="usage.html">Usage</a> &middot;
+            <a class="name" href="cmake.html">CMake</a> &middot;
+            <a class="name" href="reference.html">Reference</a>
+        </div>
+        <div class="usage">
+            <section>
+<h1 id="usage"><a href="#usage">Usage</a></h1>
+<h2 id="capturing-a-stacktrace"><a href="#capturing-a-stacktrace">Capturing a stacktrace</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;eggs/stacktrace.hpp&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">foo</span><span class="p">()</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="w"> </span><span class="n">st</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="o">::</span><span class="n">current</span><span class="p">();</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">st</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><code>stacktrace::current()</code> captures the calling thread's stack, starting
+at the function that called it. Stream insertion and <code>to_string</code> print
+one entry per line.</p>
+<hr />
+<h2 id="skipping-frames-and-limiting-depth"><a href="#skipping-frames-and-limiting-depth">Skipping frames and limiting depth</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="k">auto</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="o">::</span><span class="n">current</span><span class="p">();</span><span class="w">        </span><span class="c1">// starts at the caller</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="o">::</span><span class="n">current</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w">       </span><span class="c1">// skip 1 frame</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="o">::</span><span class="n">current</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">);</span><span class="w">    </span><span class="c1">// skip 1, keep at most 8</span>
+</code></pre></div>
+
+<hr />
+<h2 id="inspecting-entries"><a href="#inspecting-entries">Inspecting entries</a></h2>
+<p>A <code>stacktrace</code> is a random-access sequence of <code>stacktrace_entry</code>.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace_entry</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">st</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">native_handle</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">              </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;  &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">description</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+<span class="w">              </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;  &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">source_file</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;:&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">source_line</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><code>description()</code> is the (demangled) function name; <code>source_file()</code> and
+<code>source_line()</code> give the source location. Any of them may be empty (or
+<code>0</code>) depending on the backend and on whether debug information is
+available (<code>-g</code>, <code>/Zi</code>). See <a href="design.html">Design</a> for what each backend
+provides.</p>
+<hr />
+<h2 id="formatting"><a href="#formatting">Formatting</a></h2>
+<p>With <code>&lt;format&gt;</code> available, both types are usable with <code>std::format</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">format</span><span class="p">(</span><span class="s">&quot;{}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">st</span><span class="p">);</span><span class="w">         </span><span class="c1">// whole trace</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">format</span><span class="p">(</span><span class="s">&quot;{:&gt;40}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">st</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span><span class="w">  </span><span class="c1">// one entry, with width/align</span>
+</code></pre></div>
+
+<p><code>stacktrace_entry</code> accepts a fill-and-align and width; <code>stacktrace</code>
+accepts no format specification.</p>
+<hr />
+<h2 id="capturing-in-an-exception"><a href="#capturing-in-an-exception">Capturing in an exception</a></h2>
+<p>Capture the trace where the exception is created, not where it is
+caught. Skip the constructor's own frame so the trace starts at the
+throw site:</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">traced_error</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">runtime_error</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="w"> </span><span class="n">trace</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">explicit</span><span class="w"> </span><span class="n">traced_error</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">msg</span><span class="p">)</span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">runtime_error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+<span class="w">        </span><span class="p">,</span><span class="w"> </span><span class="n">trace</span><span class="p">(</span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="o">::</span><span class="n">current</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>See <code>example/exception.cpp</code> for a complete program.</p>
+<hr />
+<h2 id="hashing-and-comparison"><a href="#hashing-and-comparison">Hashing and comparison</a></h2>
+<p>Entries and stacktraces are equality comparable and totally ordered
+(<code>&lt;=&gt;</code> in C++20, relational operators before), and <code>std::hash</code> is
+specialized for both. This makes them usable as keys, for example to
+deduplicate error reports by call stack:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">std</span><span class="o">::</span><span class="n">unordered_set</span><span class="o">&lt;</span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="o">&gt;</span><span class="w"> </span><span class="n">seen</span><span class="p">;</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">seen</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">eggs</span><span class="o">::</span><span class="n">stacktrace</span><span class="o">::</span><span class="n">current</span><span class="p">()).</span><span class="n">second</span><span class="p">)</span>
+<span class="w">    </span><span class="n">report_new_site</span><span class="p">();</span>
+</code></pre></div>
+            </section>
+        </div>
+        <hr>
+        <p>
+            Copyright &copy; 2026 Agustin Berge
+        </p>
+        <p>
+            Distributed under the Boost Software License, Version 1.0.<br>
+            See accompanying file LICENSE.txt or copy at
+            <a href="http://www.boost.org/LICENSE_1_0.txt">http://www.boost.org/LICENSE_1_0.txt</a>
+        </p>
+    </div>
+</body>
+</html>
